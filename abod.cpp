@@ -104,16 +104,16 @@ void Abod::compute(const cv::Mat& pict)
     cv::Mat result;
     cvtColor(pict, result, CV_BGR2GRAY);
 
-    for(int r = 0; r < pict.size().height; ++r) {
-        for(int c = 0; c < pict.size().width; ++c) {
-            auto vec = hsv.at<Vec<unsigned char,3>>(c, r);
+    for(int i = 0; i < pict.rows; ++i) {
+        for(int j = 0; j < pict.cols; ++j) {
+            auto vec = hsv.at<Vec<unsigned char,3>>(i,j);
             int hue   = (float)vec[0] / 180.0f * 30.0f;
             int value = (float)vec[2] / 255.0f * 30.0f;
             
             if(m_vhist.at<int>(value) < m_vthresh || m_hhist.at<int>(hue) < m_hthresh)
-                result.at<unsigned char>(r, c) = 0;
+                result.at<unsigned char>(i,j) = 0;
             else
-                result.at<unsigned char>(r, c) = 255;
+                result.at<unsigned char>(i,j) = 255;
         }
     }
     imshow("Result", result);
