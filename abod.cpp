@@ -60,14 +60,14 @@ void Abod::addGround(const cv::Mat& pict)
         m_vhist = vhist;
     else {
         for(int i = 0; i < 30; ++i)
-            m_vhist.at<unsigned int>(i, m_vhist.at<unsigned int>(i) | vhist.at<unsigned int>(i));
+            m_vhist.at<unsigned int>(i) = m_vhist.at<unsigned int>(i) | vhist.at<unsigned int>(i);
     }
 
     if(m_hhist.empty())
         m_hhist = hhist;
     else {
         for(int i = 0; i < 30; ++i)
-            m_hhist.at<unsigned int>(i, m_hhist.at<unsigned int>(i) | hhist.at<unsigned int>(i));
+            m_hhist.at<unsigned int>(i) = m_hhist.at<unsigned int>(i) | hhist.at<unsigned int>(i);
     }
 }
 
@@ -106,15 +106,14 @@ void Abod::compute(const cv::Mat& pict)
 
     for(int r = 0; r < pict.size().height; ++r) {
         for(int c = 0; c < pict.size().width; ++c) {
-            int hue   = hsv.ptr<float>(c)[3*r];
-            hue = (float)hue / 180.0f * 30.0f;
-            int value = hsv.ptr<float>(c)[3*r+2];
-            value = (float)value / 255.0f * 30.0f;
+            auto vec = hsv.at<Vec<unsigned char,3>>(c, r);
+            int hue   = (float)vec[0] / 180.0f * 30.0f;
+            int value = (float)vec[2] / 255.0f * 30.0f;
             
-            if(m_vhist.at<int>(value) < m_vthresh || m_hhist.at<int>(value) < m_hthresh)
-                result.at<char>(c, r, 0);
+            if(m_vhist.at<int>(value) < m_vthresh || m_hhist.at<int>(hue) < m_hthresh)
+                result.at<unsigned char>(r, c) = 0;
             else
-                result.at<char>(c, r, 255);
+                result.at<unsigned char>(r, c) = 255;
         }
     }
     imshow("Result", result);
