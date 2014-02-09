@@ -19,6 +19,7 @@ int main()
 
         while((char)cvWaitKey(0) != ' ');
     }
+    abod.save("ground");
 
     return 0;
 }

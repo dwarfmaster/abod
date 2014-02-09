@@ -71,3 +71,21 @@ void Abod::addGround(const cv::Mat& pict)
     }
 }
 
+bool Abod::save(const std::string& path)
+{
+    FileStorage fs(path, FileStorage::WRITE);
+    fs << "value" << m_vhist;
+    fs << "hue"   << m_hhist;
+    fs.release();
+    return true;
+}
+
+bool Abod::load(const std::string& path)
+{
+    FileStorage fs(path, FileStorage::READ);
+    fs["value"] >> m_vhist;
+    fs["hue"]   >> m_hhist;
+    fs.release();
+    return true;
+}
+
