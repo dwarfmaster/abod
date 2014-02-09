@@ -97,3 +97,27 @@ bool Abod::load(const std::string& path)
     return true;
 }
 
+void Abod::compute(const cv::Mat& pict)
+{
+    cv::Mat hsv;
+    cvtColor(pict, hsv, CV_BGR2HSV);
+    cv::Mat result;
+    cvtColor(pict, result, CV_BGR2GRAY);
+
+    for(int r = 0; r < pict.size().height; ++r) {
+        for(int c = 0; c < pict.size().width; ++c) {
+            int hue   = hsv.ptr<float>(c)[3*r];
+            hue = (float)hue / 180.0f * 30.0f;
+            int value = hsv.ptr<float>(c)[3*r+2];
+            value = (float)value / 255.0f * 30.0f;
+            
+            if(m_vhist.at<int>(value) < m_vthresh || m_hhist.at<int>(value) < m_hthresh)
+                result.at<char>(c, r, 0);
+            else
+                result.at<char>(c, r, 255);
+        }
+    }
+    imshow("Result", result);
+}
+
+
