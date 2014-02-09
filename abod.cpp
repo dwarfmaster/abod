@@ -86,6 +86,14 @@ bool Abod::load(const std::string& path)
     fs["value"] >> m_vhist;
     fs["hue"]   >> m_hhist;
     fs.release();
+
+    m_vthresh = m_hthresh = 0;
+    for(int i = 0; i < 30; ++i) {
+        m_vthresh += m_vhist.at<unsigned int>(i);
+        m_hthresh += m_hhist.at<unsigned int>(i);
+    }
+    m_vthresh /= 30;
+    m_hthresh /= 30;
     return true;
 }
 

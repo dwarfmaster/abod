@@ -15,9 +15,13 @@ class Abod
         bool save(const std::string& path);
         bool load(const std::string& path);
 
+        void compute(const cv::Mat& pict);
+
     private:
         cv::MatND m_vhist;
         cv::MatND m_hhist;
+        unsigned int m_vthresh;
+        unsigned int m_hthresh;
 };
 
 #endif
