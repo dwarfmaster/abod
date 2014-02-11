@@ -27,17 +27,17 @@ void Abod::addGround(const cv::Mat& pict)
     fillPoly(mask, polys, npts, 1, Scalar(255, 255, 255));
 
     /* Compute hue histogram */
-    int histSize[] = { 30 };
+    int histSize[] = { 180 };
     float hranges[] = { 0, 180 };
     const float* ranges[] = { hranges };
-    MatND hhist;
+    Mat hhist;
     int channels[] = { 0 };
     calcHist(&used, 1, channels, Mat(), hhist, 1, histSize, ranges, true, false);
 
     /* Compute intensity histogram */
-    histSize[0] = 30;
+    histSize[0] = 255;
     hranges[2] = 255;
-    MatND vhist;
+    Mat vhist;
     channels[0] = 2;
     calcHist(&used, 1, channels, mask, vhist, 1, histSize, ranges, true, false);
 
@@ -45,11 +45,13 @@ void Abod::addGround(const cv::Mat& pict)
     Point hpt(0,0);
     Point vpt(0,0);
     const float scale = .05f;
-    for(int i = 0; i < 30; ++i) {
-        Point npt(i*21, hhist.at<float>(i) * scale);
-        line(used, hpt, npt, Scalar(255,0,0), 3);
-        hpt = npt;
-        npt.y = vhist.at<float>(i) * scale;
+    for(int i = 0; i < 255; ++i) {
+        Point npt(i*3, 480 - hhist.at<float>(i) * scale);
+        if(i < 180) {
+            line(used, hpt, npt, Scalar(255,0,0), 3);
+            hpt = npt;
+        }
+        npt.y = 480 - vhist.at<float>(i) * scale;
         line(used, vpt, npt, Scalar(0,255,0), 3);
         vpt = npt;
     }
@@ -59,15 +61,15 @@ void Abod::addGround(const cv::Mat& pict)
     if(m_vhist.empty())
         m_vhist = vhist;
     else {
-        for(int i = 0; i < 30; ++i)
-            m_vhist.at<unsigned int>(i) = m_vhist.at<unsigned int>(i) | vhist.at<unsigned int>(i);
+        for(int i = 0; i < 180; ++i)
+            m_vhist.at<float>(i) = m_vhist.at<float>(i) + vhist.at<float>(i);
     }
 
     if(m_hhist.empty())
         m_hhist = hhist;
     else {
-        for(int i = 0; i < 30; ++i)
-            m_hhist.at<unsigned int>(i) = m_hhist.at<unsigned int>(i) | hhist.at<unsigned int>(i);
+        for(int i = 0; i < 255; ++i)
+            m_hhist.at<float>(i) = m_hhist.at<float>(i) + hhist.at<float>(i);
     }
 }
 
@@ -88,29 +90,31 @@ bool Abod::load(const std::string& path)
     fs.release();
 
     m_vthresh = m_hthresh = 0;
-    for(int i = 0; i < 30; ++i) {
-        m_vthresh += m_vhist.at<unsigned int>(i);
-        m_hthresh += m_hhist.at<unsigned int>(i);
-    }
-    m_vthresh /= 30;
-    m_hthresh /= 30;
+    for(int i = 0; i < 255; ++i)
+        m_vthresh += m_vhist.at<float>(i);
+    for(int i = 0; i < 180; ++i)
+        m_hthresh += m_hhist.at<float>(i);
+
+    m_vthresh /= 255.0f;
+    m_hthresh /= 180.0f;
     return true;
 }
 
 void Abod::compute(const cv::Mat& pict)
 {
     cv::Mat hsv;
-    cvtColor(pict, hsv, CV_BGR2HSV);
+    GaussianBlur(pict, hsv, Size(5,5), 1.8);
+    cvtColor(hsv, hsv, CV_BGR2HSV);
     cv::Mat result;
     cvtColor(pict, result, CV_BGR2GRAY);
 
     for(int i = 0; i < pict.rows; ++i) {
         for(int j = 0; j < pict.cols; ++j) {
             auto vec = hsv.at<Vec<unsigned char,3>>(i,j);
-            int hue   = (float)vec[0] / 180.0f * 30.0f;
-            int value = (float)vec[2] / 255.0f * 30.0f;
+            int hue   = (float)vec[0];
+            int value = (float)vec[2];
             
-            if(m_vhist.at<int>(value) < m_vthresh || m_hhist.at<int>(hue) < m_hthresh)
+            if(m_vhist.at<float>(value) < m_vthresh || m_hhist.at<float>(hue) < m_hthresh)
                 result.at<unsigned char>(i,j) = 0;
             else
                 result.at<unsigned char>(i,j) = 255;
