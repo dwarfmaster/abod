@@ -4,6 +4,7 @@
 using namespace cv;
 
 Abod::Abod()
+    : m_nb(0)
 {
 }
 
@@ -32,7 +33,7 @@ void Abod::addGround(const cv::Mat& pict)
     const float* ranges[] = { hranges };
     Mat hhist;
     int channels[] = { 0 };
-    calcHist(&used, 1, channels, Mat(), hhist, 1, histSize, ranges, true, false);
+    calcHist(&used, 1, channels, mask, hhist, 1, histSize, ranges, true, false);
 
     /* Compute intensity histogram */
     histSize[0] = 255;
@@ -71,11 +72,15 @@ void Abod::addGround(const cv::Mat& pict)
         for(int i = 0; i < 255; ++i)
             m_hhist.at<float>(i) = m_hhist.at<float>(i) + hhist.at<float>(i);
     }
+
+    ++m_nb;
 }
 
 bool Abod::save(const std::string& path)
 {
     FileStorage fs(path, FileStorage::WRITE);
+    m_vhist /= m_nb;
+    m_hhist /= m_nb;
     fs << "value" << m_vhist;
     fs << "hue"   << m_hhist;
     fs.release();
@@ -88,15 +93,6 @@ bool Abod::load(const std::string& path)
     fs["value"] >> m_vhist;
     fs["hue"]   >> m_hhist;
     fs.release();
-
-    m_vthresh = m_hthresh = 0;
-    for(int i = 0; i < 255; ++i)
-        m_vthresh += m_vhist.at<float>(i);
-    for(int i = 0; i < 180; ++i)
-        m_hthresh += m_hhist.at<float>(i);
-
-    m_vthresh /= 255.0f;
-    m_hthresh /= 180.0f;
     return true;
 }
 
@@ -108,13 +104,29 @@ void Abod::compute(const cv::Mat& pict)
     cv::Mat result;
     cvtColor(pict, result, CV_BGR2GRAY);
 
+    /* Computing saturation histogram. */
+    int histSize[] = { 180 };
+    float hranges[] = { 0, 180 };
+    const float* ranges[] = { hranges };
+    Mat hhist;
+    int channels[] = { 0 };
+    calcHist(&hsv, 1, channels, Mat(), hhist, 1, histSize, ranges, true, false);
+
+    /* Compute intensity histogram */
+    histSize[0] = 255;
+    hranges[2] = 255;
+    Mat vhist;
+    channels[0] = 2;
+    calcHist(&hsv, 1, channels, Mat(), vhist, 1, histSize, ranges, true, false);
+
     for(int i = 0; i < pict.rows; ++i) {
         for(int j = 0; j < pict.cols; ++j) {
             auto vec = hsv.at<Vec<unsigned char,3>>(i,j);
             int hue   = (float)vec[0];
             int value = (float)vec[2];
             
-            if(m_vhist.at<float>(value) < m_vthresh || m_hhist.at<float>(hue) < m_hthresh)
+            if(vhist.at<float>(value) < m_vhist.at<float>(value)
+                    || hhist.at<float>(hue) < m_hhist.at<float>(hue))
                 result.at<unsigned char>(i,j) = 0;
             else
                 result.at<unsigned char>(i,j) = 255;
