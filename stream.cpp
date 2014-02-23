@@ -4,17 +4,22 @@
 #include <opencv2/opencv.hpp>
 #include "abod.hpp"
 
-int main()
+int main(int argc, char *argv[])
 {
     Abod abod;
     abod.load("ground");
-    cv::VideoCapture cam(1);
+    cv::VideoCapture input;
+
+    if(argc == 2)
+        input.open(argv[1]);
+    else
+        input.open(1);
 
     bool cont = true;
     cv::Mat img;
     while(cont) {
-        cam.grab();
-        cam.retrieve(img);
+        input.grab();
+        input.retrieve(img);
         cv::imshow("Stream", img);
         abod.compute(img);
 
