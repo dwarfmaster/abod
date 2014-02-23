@@ -83,9 +83,27 @@ void Abod::addGround(const cv::Mat& pict)
 
 bool Abod::save(const std::string& path)
 {
+    Mat ssorted, hsorted;
+    sort(m_shist, ssorted, CV_SORT_EVERY_COLUMN | CV_SORT_ASCENDING);
+    sort(m_hhist, hsorted, CV_SORT_EVERY_COLUMN | CV_SORT_ASCENDING);
+
+    m_sthresh = m_hthresh = 0.0f;
+    int i = 255/2;
+    while(i < 255 && m_sthresh == 0) {
+        m_sthresh = ssorted.at<float>(i);
+        ++i;
+    }
+    i = 90;
+    while(i < 180 && m_hthresh == 0) {
+        m_hthresh = hsorted.at<float>(i);
+        ++i;
+    }
+
     FileStorage fs(path, FileStorage::WRITE);
     fs << "sat" << m_shist;
     fs << "hue" << m_hhist;
+    fs << "sth" << m_sthresh;
+    fs << "hth" << m_hthresh;
     fs.release();
     return true;
 }
@@ -95,17 +113,9 @@ bool Abod::load(const std::string& path)
     FileStorage fs(path, FileStorage::READ);
     fs["sat"] >> m_shist;
     fs["hue"] >> m_hhist;
+    fs["sth"] >> m_sthresh;
+    fs["hth"] >> m_hthresh;
     fs.release();
-
-    m_sthresh = m_hthresh = 0.0f;
-    for(unsigned int i = 0; i < 255; ++i) {
-        if(i < 180)
-            m_hthresh += m_hhist.at<float>(i);
-        m_sthresh += m_shist.at<float>(i);
-    }
-    m_sthresh /= 255.0f;
-    m_hthresh /= 180.0f;
-
     return true;
 }
 
