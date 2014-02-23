@@ -45,6 +45,12 @@ void Abod::addGround(const cv::Mat& pict)
     calcHist(&used, 1, channels, mask, vhist, 1, histSize, ranges, true, false);
 
     /* Debug plot */
+    Mat splitted[3];
+    split(used, splitted);
+    imshow("Hue",        splitted[0]);
+    imshow("Saturation", splitted[1]);
+    imshow("Value",      splitted[2]);
+
     Point hpt(0,0);
     Point vpt(0,0);
     const float scale = .05f;
