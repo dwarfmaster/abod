@@ -18,7 +18,7 @@ class Abod
         void compute(const cv::Mat& pict);
 
     private:
-        cv::MatND m_vhist;
+        cv::MatND m_shist;
         cv::MatND m_hhist;
         unsigned int m_nb;
 };
