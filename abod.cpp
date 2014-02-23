@@ -1,6 +1,7 @@
 
 #include "abod.hpp"
 #include <iostream>
+#include <sstream>
 using namespace cv;
 
 Abod::Abod()
@@ -144,7 +145,7 @@ bool Abod::load(const std::string& path)
     return true;
 }
 
-void Abod::compute(const cv::Mat& pict)
+void Abod::compute(const cv::Mat& pict, bool sav)
 {
     cv::Mat hsv;
     GaussianBlur(pict, hsv, Size(5,5), 1.8);
@@ -172,7 +173,7 @@ void Abod::compute(const cv::Mat& pict)
             auto vec = hsv.at<Vec<unsigned char,3>>(i,j);
             int hue = (float)vec[0];
             int sat = (float)vec[1];
-            
+
             if(m_shist.at<float>(sat) < m_sthresh
                     || m_hhist.at<float>(hue) < m_hthresh)
                 result.at<unsigned char>(i,j) = 0;
@@ -181,6 +182,14 @@ void Abod::compute(const cv::Mat& pict)
         }
     }
     imshow("Result", result);
+
+    if(sav) {
+        static unsigned int nb = 0;
+        std::ostringstream path;
+        path << "results/pict" << nb << ".png";
+        imwrite(path.str(), result);
+        ++nb;
+    }
 }
 
 

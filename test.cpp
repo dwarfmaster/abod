@@ -16,7 +16,7 @@ int main()
     while(std::getline(ifs, line)) {
         cv::Mat img = cv::imread(line);
         imshow("Loaded", img);
-        abod.compute(img);
+        abod.compute(img, true);
 
         while((char)cvWaitKey(0) != ' ');
     }
