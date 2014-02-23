@@ -4,7 +4,6 @@
 using namespace cv;
 
 Abod::Abod()
-    : m_nb(0)
 {
 }
 
@@ -17,8 +16,8 @@ void Abod::addGround(const cv::Mat& pict)
     /* Preparing picture */
     const int plotHeight = pict.size().height;
     const int plotWidth  = pict.size().width;
-    cv::Mat used = pict;
-    // GaussianBlur(pict, used, Size(5,5), 1.8);
+    cv::Mat used;
+    GaussianBlur(pict, used, Size(5,5), 1.8);
     cvtColor(used, used, CV_BGR2HSV);
 
     /* Create mask */
@@ -80,15 +79,11 @@ void Abod::addGround(const cv::Mat& pict)
         for(int i = 0; i < 180; ++i)
             m_hhist.at<float>(i) = m_hhist.at<float>(i) + hhist.at<float>(i);
     }
-
-    ++m_nb;
 }
 
 bool Abod::save(const std::string& path)
 {
     FileStorage fs(path, FileStorage::WRITE);
-    m_shist /= m_nb;
-    m_hhist /= m_nb;
     fs << "sat" << m_shist;
     fs << "hue" << m_hhist;
     fs.release();
@@ -101,13 +96,23 @@ bool Abod::load(const std::string& path)
     fs["sat"] >> m_shist;
     fs["hue"] >> m_hhist;
     fs.release();
+
+    m_sthresh = m_hthresh = 0.0f;
+    for(unsigned int i = 0; i < 255; ++i) {
+        if(i < 180)
+            m_hthresh += m_hhist.at<float>(i);
+        m_sthresh += m_shist.at<float>(i);
+    }
+    m_sthresh /= 255.0f;
+    m_hthresh /= 180.0f;
+
     return true;
 }
 
 void Abod::compute(const cv::Mat& pict)
 {
-    cv::Mat hsv = pict;
-    // GaussianBlur(pict, hsv, Size(5,5), 1.8);
+    cv::Mat hsv;
+    GaussianBlur(pict, hsv, Size(5,5), 1.8);
     cvtColor(hsv, hsv, CV_BGR2HSV);
     cv::Mat result;
     cvtColor(pict, result, CV_BGR2GRAY);
@@ -133,8 +138,8 @@ void Abod::compute(const cv::Mat& pict)
             int hue = (float)vec[0];
             int sat = (float)vec[1];
             
-            if(shist.at<float>(sat) < m_shist.at<float>(sat)
-                    || hhist.at<float>(hue) < m_hhist.at<float>(hue))
+            if(m_shist.at<float>(sat) < m_sthresh
+                    || m_hhist.at<float>(hue) < m_hthresh)
                 result.at<unsigned char>(i,j) = 0;
             else
                 result.at<unsigned char>(i,j) = 255;

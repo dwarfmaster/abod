@@ -20,7 +20,8 @@ class Abod
     private:
         cv::MatND m_shist;
         cv::MatND m_hhist;
-        unsigned int m_nb;
+        float m_sthresh;
+        float m_hthresh;
 };
 
 #endif
