@@ -21,8 +21,10 @@ void Abod::addGround(const cv::Mat& pict)
 
     /* Create mask */
     Mat mask(pict.size(), CV_8U);
+    const int plotHeight = pict.size().height;
+    const int plotWidth  = pict.size().width;
     mask = Scalar(0);
-    Point poly[] = { Point(20,480), Point(60,200), Point(580,200), Point(620,480) };
+    Point poly[] = { Point(20,plotHeight), Point(60,plotHeight/2), Point(plotWidth - 60,plotHeight/2), Point(plotWidth - 20,plotHeight) };
     const Point* polys[] = { poly };
     int npts[] = { 4 };
     fillPoly(mask, polys, npts, 1, Scalar(255, 255, 255));
@@ -46,7 +48,6 @@ void Abod::addGround(const cv::Mat& pict)
     Point hpt(0,0);
     Point vpt(0,0);
     const float scale = .05f;
-    const int plotHeight = pict.size().height;
     for(int i = 0; i < 255; ++i) {
         Point npt(i*3, plotHeight - hhist.at<float>(i) * scale);
         if(i < 180) {
