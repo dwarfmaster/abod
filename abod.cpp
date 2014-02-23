@@ -83,7 +83,31 @@ void Abod::addGround(const cv::Mat& pict)
 
 bool Abod::save(const std::string& path)
 {
-    Mat ssorted, hsorted;
+    Mat ssorted;
+    Mat hsorted;
+
+    /* Blur */
+    Mat temp = m_shist.clone();
+    m_shist.at<float>(0)   = floor(0.5f * m_shist.at<float>(0) + 0.25f * m_shist.at<float>(1));
+    m_shist.at<float>(254) = floor(0.5f * m_shist.at<float>(254) + 0.25f * m_shist.at<float>(253));
+    for(unsigned int i = 1; i < 254; ++i) {
+        m_shist.at<float>(i) = 0.25f * temp.at<float>(i-1)
+            + 0.25f * temp.at<float>(i+1)
+            + 0.5f  * temp.at<float>(i);
+        m_shist.at<float>(i) = floor(m_shist.at<float>(i));
+    }
+
+    temp = m_hhist.clone();
+    m_hhist.at<float>(0)   = floor(0.5f * m_hhist.at<float>(0) + 0.25f * m_hhist.at<float>(1));
+    m_hhist.at<float>(179) = floor(0.5f * m_hhist.at<float>(179) + 0.25f * m_hhist.at<float>(178));
+    for(unsigned int i = 1; i < 179; ++i) {
+        m_hhist.at<float>(i) = 0.25f * temp.at<float>(i-1)
+            + 0.25f * temp.at<float>(i+1)
+            + 0.5f  * temp.at<float>(i);
+        m_hhist.at<float>(i) = floor(m_hhist.at<float>(i));
+    }
+
+    /* Median */
     sort(m_shist, ssorted, CV_SORT_EVERY_COLUMN | CV_SORT_ASCENDING);
     sort(m_hhist, hsorted, CV_SORT_EVERY_COLUMN | CV_SORT_ASCENDING);
 
@@ -99,6 +123,7 @@ bool Abod::save(const std::string& path)
         ++i;
     }
 
+    /* Save */
     FileStorage fs(path, FileStorage::WRITE);
     fs << "sat" << m_shist;
     fs << "hue" << m_hhist;
